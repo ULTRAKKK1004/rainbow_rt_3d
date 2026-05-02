@@ -137,9 +137,11 @@ function handleEnvUpdate() {
     const rx = parseFloat(document.getElementById('envRX').value) * Math.PI / 180;
     const ry = parseFloat(document.getElementById('envRY').value) * Math.PI / 180;
     const rz = parseFloat(document.getElementById('envRZ').value) * Math.PI / 180;
+    const s = parseFloat(document.getElementById('envScale').value);
 
     envModel.position.set(x, y, z);
     envModel.rotation.set(rx, ry, rz);
+    envModel.scale.set(s, s, s);
 }
 
 function startDanceLoop() {
