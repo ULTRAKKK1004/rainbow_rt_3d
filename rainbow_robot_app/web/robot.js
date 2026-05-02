@@ -46,72 +46,98 @@ function loadRobot() {
     const loader = new ColladaLoader();
     const meshPath = 'meshes/rb5_850e/visual/';
     
-    // We'll create a hierarchy manually based on URDF
-    const group0 = new THREE.Group(); // Base Link0
-    scene.add(group0);
+    const robotGroup = new THREE.Group();
+    scene.add(robotGroup);
 
+    // Link 0
+    const link0 = new THREE.Group();
+    robotGroup.add(link0);
     loader.load(meshPath + 'link0.dae', (collada) => {
-        group0.add(collada.scene);
+        link0.add(collada.scene);
     });
 
-    const j1 = new THREE.Group(); j1.position.set(0, 0.1692, 0); // Joint 1 origin
-    group0.add(j1);
+    // Joint 1: base (link0 -> link1)
+    const j1 = new THREE.Group();
+    j1.position.set(0, 0.1692, 0);
+    link0.add(j1);
     robotJoints.push(j1);
 
+    // Link 1
+    const link1 = new THREE.Group();
+    j1.add(link1);
     loader.load(meshPath + 'link1.dae', (collada) => {
-        const link = collada.scene;
-        link.position.set(0, -0.1692, 0); // Offset link mesh back to align with joint
-        j1.add(link);
+        link1.add(collada.scene);
     });
 
-    const j2 = new THREE.Group(); j2.position.set(0, 0, 0); // Joint 2 origin
-    j1.add(j2);
+    // Joint 2: shoulder (link1 -> link2)
+    const j2 = new THREE.Group();
+    j2.position.set(0, 0, 0);
+    link1.add(j2);
     robotJoints.push(j2);
 
+    // Link 2
+    const link2 = new THREE.Group();
+    j2.add(link2);
     loader.load(meshPath + 'link2.dae', (collada) => {
-        const link = collada.scene;
-        j2.add(link);
+        link2.add(collada.scene);
     });
 
-    const j3 = new THREE.Group(); j3.position.set(0, 0.425, 0); // Joint 3 origin
-    j2.add(j3);
+    // Joint 3: elbow (link2 -> link3)
+    const j3 = new THREE.Group();
+    j3.position.set(0, 0.425, 0);
+    link2.add(j3);
     robotJoints.push(j3);
 
+    // Link 3
+    const link3 = new THREE.Group();
+    j3.add(link3);
     loader.load(meshPath + 'link3.dae', (collada) => {
-        const link = collada.scene;
-        link.position.set(0, -0.425, 0);
-        j3.add(link);
+        link3.add(collada.scene);
     });
 
-    const j4 = new THREE.Group(); j4.position.set(0, 0.392, 0); // Joint 4 origin
-    j3.add(j4);
+    // Joint 4: wrist1 (link3 -> link4)
+    const j4 = new THREE.Group();
+    j4.position.set(0, 0.392, 0);
+    link3.add(j4);
     robotJoints.push(j4);
 
+    // Link 4
+    const link4 = new THREE.Group();
+    j4.add(link4);
     loader.load(meshPath + 'link4.dae', (collada) => {
-        const link = collada.scene;
-        link.position.set(0, -0.392, 0);
-        j4.add(link);
+        link4.add(collada.scene);
     });
 
-    const j5 = new THREE.Group(); j5.position.set(0, 0.1107, -0.1107); // Joint 5 origin (note: coordinate swap for Three.js Y-up)
-    j4.add(j5);
+    // Joint 5: wrist2 (link4 -> link5)
+    const j5 = new THREE.Group();
+    // URDF: 0 -0.1107 0.1107 -> Three.js Y-up: x=0, y=0.1107, z=-0.1107? 
+    // Let's use the URDF values carefully. 
+    // Standard URDF (Z-up) to Three.js (Y-up): X -> X, Y -> Z, Z -> Y
+    j5.position.set(0, 0.1107, -0.1107);
+    link4.add(j5);
     robotJoints.push(j5);
 
+    // Link 5
+    const link5 = new THREE.Group();
+    j5.add(link5);
     loader.load(meshPath + 'link5.dae', (collada) => {
-        const link = collada.scene;
-        link.position.set(0, -0.1107, 0.1107);
-        j5.add(link);
+        link5.add(collada.scene);
     });
 
-    const j6 = new THREE.Group(); j6.position.set(0, 0, 0); // Joint 6 origin
-    j5.add(j6);
+    // Joint 6: wrist3 (link5 -> link6)
+    const j6 = new THREE.Group();
+    j6.position.set(0, 0, 0);
+    link5.add(j6);
     robotJoints.push(j6);
 
+    // Link 6
+    const link6 = new THREE.Group();
+    j6.add(link6);
     loader.load(meshPath + 'link6.dae', (collada) => {
-        const link = collada.scene;
-        j6.add(link);
+        link6.add(collada.scene);
     });
 }
+
 
 function updateStatus() {
     fetch('/api/status')
@@ -131,17 +157,18 @@ function updateStatus() {
             
             // Update Robot Rotations
             if (robotJoints.length === 6) {
-                // Mapping URDF axes to Three.js
-                // base (Z): rotation.y in Three.js (if whole scene rotated)
-                // shoulder (Y): rotation.x or z?
-                // Let's assume a standard mapping.
-                robotJoints[0].rotation.y = jointData[0]; // Base
-                robotJoints[1].rotation.x = jointData[1]; // Shoulder
-                robotJoints[2].rotation.x = jointData[2]; // Elbow
-                robotJoints[3].rotation.x = jointData[3]; // Wrist1
-                robotJoints[4].rotation.y = jointData[4]; // Wrist2
-                robotJoints[5].rotation.x = jointData[5]; // Wrist3
+                // URDF (Z-up) to Three.js (Y-up) mapping:
+                // URDF Z-axis (Base, Wrist2) -> Three.js Y-axis
+                // URDF Y-axis (Shoulder, Elbow, Wrist1, Wrist3) -> Three.js Z-axis
+                
+                robotJoints[0].rotation.y = jointData[0]; // base
+                robotJoints[1].rotation.z = jointData[1]; // shoulder
+                robotJoints[2].rotation.z = jointData[2]; // elbow
+                robotJoints[3].rotation.z = jointData[3]; // wrist1
+                robotJoints[4].rotation.y = jointData[4]; // wrist2
+                robotJoints[5].rotation.z = jointData[5]; // wrist3
             }
+
         });
 }
 
