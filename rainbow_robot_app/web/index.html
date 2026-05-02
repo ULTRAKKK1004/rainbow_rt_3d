@@ -90,8 +90,16 @@
             <div id="warning" style="color: red; font-weight: bold; margin-top: 5px; display: none;">LIMIT REACHED!</div>
         </div>
         <div id="env-controls" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
-            <strong>Environment Model</strong><br>
-            <input type="file" id="modelInput" accept=".obj,.stl" style="font-size: 0.8em; margin-top: 5px;"><br>
+            <strong>Toolbox & Environment</strong><br>
+            <select id="toolboxSelect" onchange="loadFromToolbox()" style="font-size: 0.8em; width: 100%; margin-top: 5px;">
+                <option value="">-- Select from Toolbox --</option>
+                <option value="chamber">Dymstech RTS Chamber (Base)</option>
+                <option value="hand">Hand Phantom (Placeholder)</option>
+                <option value="head">Head Phantom (Placeholder)</option>
+                <option value="jig">Universal Robot Jig (Plate)</option>
+            </select>
+            <div style="font-size: 0.7em; color: #888; margin-top: 2px;">Or upload your own:</div>
+            <input type="file" id="modelInput" accept=".obj,.stl" style="font-size: 0.8em; margin-top: 2px;"><br>
             <div style="margin-top: 10px; font-size: 0.8em;">
                 X: <input type="number" id="envX" value="0.5" step="0.1" style="width: 40px;">
                 Y: <input type="number" id="envY" value="0" step="0.1" style="width: 40px;">
@@ -146,6 +154,10 @@
 
         window.updateEnvModel = function() {
             if (window.refreshEnvModel) window.refreshEnvModel();
+        }
+
+        window.loadFromToolbox = function() {
+            if (window.toolboxLoad) window.toolboxLoad(document.getElementById('toolboxSelect').value);
         }
 
         window.saveWorkspace = function() {

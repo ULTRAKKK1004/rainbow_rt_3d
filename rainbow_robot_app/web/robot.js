@@ -363,3 +363,49 @@ window.getWorkspaceData = function() {
 window.triggerModelLoad = function(data, ext) {
     loadUserFile(data, ext);
 }
+
+window.toolboxLoad = function(type) {
+    if (!type) return;
+    if (envModel) scene.remove(envModel);
+
+    let geometry, material;
+    const group = new THREE.Group();
+
+    if (type === 'chamber') {
+        // Dymstech RTS Chamber Placeholder (Large Cylinder/Box)
+        geometry = new THREE.CylinderGeometry(1, 1, 2, 32, 1, true);
+        material = new THREE.MeshPhongMaterial({ color: 0x333333, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+        const wall = new THREE.Mesh(geometry, material);
+        group.add(wall);
+        // Base plate
+        const baseGeo = new THREE.CircleGeometry(1, 32);
+        const base = new THREE.Mesh(baseGeo, material);
+        base.rotation.x = -Math.PI / 2;
+        group.add(base);
+    } else if (type === 'hand') {
+        // Hand Phantom Placeholder (Simplified)
+        geometry = new THREE.BoxGeometry(0.1, 0.02, 0.2);
+        material = new THREE.MeshPhongMaterial({ color: 0xffdbac }); // Skin tone
+        const palm = new THREE.Mesh(geometry, material);
+        group.add(palm);
+    } else if (type === 'head') {
+        // Head Phantom Placeholder (Sphere/Oval)
+        geometry = new THREE.SphereGeometry(0.15, 32, 32);
+        geometry.scale(1, 1.2, 1);
+        material = new THREE.MeshPhongMaterial({ color: 0xffdbac });
+        const head = new THREE.Mesh(geometry, material);
+        group.add(head);
+    } else if (type === 'jig') {
+        // Universal Robot Jig (Aluminum Plate)
+        geometry = new THREE.BoxGeometry(0.2, 0.01, 0.2);
+        material = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
+        const plate = new THREE.Mesh(geometry, material);
+        group.add(plate);
+    }
+
+    envModel = group;
+    lastModelData = "placeholder_" + type;
+    lastModelExt = "internal";
+    
+    setupEnvModel(envModel);
+}
