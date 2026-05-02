@@ -42,9 +42,17 @@
             J3: <span id="cur_j3">0</span>, J4: <span id="cur_j4">0</span><br>
             J5: <span id="cur_j5">0</span>, J6: <span id="cur_j6">0</span>
         </div>
+        <div id="extra-controls" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+            <button onclick="toggleDance()" id="danceBtn" style="background: #28a745;">Start Dance Mode</button>
+            <div style="margin-top: 10px; font-size: 0.8em; color: #666;">
+                <input type="checkbox" id="limitCheck" checked> Enable Joint Limit Warning
+            </div>
+            <div id="warning" style="color: red; font-weight: bold; margin-top: 5px; display: none;">LIMIT REACHED!</div>
+        </div>
     </div>
 
     <script type="importmap">
+
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
@@ -68,6 +76,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ joints })
             }).then(r => r.json()).then(d => console.log(d));
+        }
+
+        window.toggleDance = function() {
+            if (window.robotDance) window.robotDance();
         }
     </script>
 </body>

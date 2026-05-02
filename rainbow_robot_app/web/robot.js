@@ -1,10 +1,29 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 let scene, camera, renderer, controls;
 let robotJoints = [];
 let jointData = [0, 0, 0, 0, 0, 0];
+let isDancing = false;
+let danceStep = 0;
+const jointLimits = [
+    { min: -3.14, max: 3.14 },
+    { min: -3.14, max: 3.14 },
+    { min: -3.14, max: 3.14 },
+    { min: -3.14, max: 3.14 },
+    { min: -3.14, max: 3.14 },
+    { min: -3.14, max: 3.14 }
+];
+
+const danceMoves = [
+    [0, 45, -90, 0, 45, 0],
+    [45, 0, 0, 45, 0, 45],
+    [0, -45, 90, 0, -45, 0],
+    [-45, 0, 0, -45, 0, -45],
+    [0, 0, 0, 0, 0, 0]
+];
 
 init();
 animate();
@@ -35,11 +54,70 @@ function init() {
     scene.add(grid);
 
     loadRobot();
+    loadEnvironment();
 
     window.addEventListener('resize', onWindowResize);
     
     // Status polling
     setInterval(updateStatus, 50);
+
+    // Export Dance function to window
+    window.robotDance = function() {
+        isDancing = !isDancing;
+        const btn = document.getElementById('danceBtn');
+        if (isDancing) {
+            btn.innerText = "Stop Dance Mode";
+            btn.style.background = "#dc3545";
+            startDanceLoop();
+        } else {
+            btn.innerText = "Start Dance Mode";
+            btn.style.background = "#28a745";
+        }
+    };
+}
+
+function loadEnvironment() {
+    // Add a simple table as a constraint example
+    const tableGeo = new THREE.BoxGeometry(1, 0.05, 1);
+    const tableMat = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+    const table = new THREE.Mesh(tableGeo, tableMat);
+    table.position.set(0.5, 0.4, 0); // Position where robot might hit
+    scene.add(table);
+
+    // Placeholder for loading OBJ/STP
+    // const objLoader = new OBJLoader();
+    // objLoader.load('models/my_object.obj', (obj) => { scene.add(obj); });
+}
+
+function startDanceLoop() {
+    if (!isDancing) return;
+
+    const move = danceMoves[danceStep];
+    fetch('/api/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ joints: move })
+    }).then(() => {
+        danceStep = (danceStep + 1) % danceMoves.length;
+        setTimeout(startDanceLoop, 2000); // 2 seconds per move
+    });
+}
+
+function checkLimits(joints) {
+    let limitReached = false;
+    for (let i = 0; i < 6; i++) {
+        if (joints[i] < jointLimits[i].min || joints[i] > jointLimits[i].max) {
+            limitReached = true;
+            break;
+        }
+    }
+    const warning = document.getElementById('warning');
+    const checkEnabled = document.getElementById('limitCheck').checked;
+    if (checkEnabled && limitReached) {
+        warning.style.display = 'block';
+    } else {
+        warning.style.display = 'none';
+    }
 }
 
 function loadRobot() {
@@ -152,6 +230,8 @@ function updateStatus() {
             document.getElementById(`cur_j5`).innerText = (jointData[4] * 180 / Math.PI).toFixed(1);
             document.getElementById(`cur_j6`).innerText = (jointData[5] * 180 / Math.PI).toFixed(1);
             
+            checkLimits(jointData);
+
             // Update Robot Rotations
             if (robotJoints.length === 6) {
                 // URDF Axis mapping to Three.js
