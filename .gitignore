@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+rbpodo_ros2/
+.git/
+.vscode/
+venv/
+.env

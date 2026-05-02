@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rainbow Robotics 3D Control</title>
+    <style>
+        body { margin: 0; font-family: sans-serif; overflow: hidden; }
+        #ui {
+            position: absolute; top: 20px; left: 20px;
+            background: rgba(255,255,255,0.8); padding: 20px;
+            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .joint-row { margin-bottom: 10px; }
+        label { display: inline-block; width: 80px; }
+        input[type="number"] { width: 60px; }
+        button {
+            margin-top: 10px; width: 100%; padding: 10px;
+            background: #007bff; color: white; border: none;
+            border-radius: 4px; cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        #status { margin-top: 20px; font-size: 0.9em; border-top: 1px solid #ccc; pt: 10px; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h3>Robot Control</h3>
+        <div id="controls">
+            <div class="joint-row"><label>Joint 1:</label> <input type="number" id="j1" value="0" step="10"> deg</div>
+            <div class="joint-row"><label>Joint 2:</label> <input type="number" id="j2" value="0" step="10"> deg</div>
+            <div class="joint-row"><label>Joint 3:</label> <input type="number" id="j3" value="0" step="10"> deg</div>
+            <div class="joint-row"><label>Joint 4:</label> <input type="number" id="j4" value="0" step="10"> deg</div>
+            <div class="joint-row"><label>Joint 5:</label> <input type="number" id="j5" value="0" step="10"> deg</div>
+            <div class="joint-row"><label>Joint 6:</label> <input type="number" id="j6" value="0" step="10"> deg</div>
+            <button onclick="sendMove()">Send Move Command</button>
+        </div>
+        <div id="status">
+            <strong>Current Status:</strong><br>
+            J1: <span id="cur_j1">0</span>, J2: <span id="cur_j2">0</span><br>
+            J3: <span id="cur_j3">0</span>, J4: <span id="cur_j4">0</span><br>
+            J5: <span id="cur_j5">0</span>, J6: <span id="cur_j6">0</span>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="robot.js"></script>
+    <script>
+        function sendMove() {
+            const joints = [
+                parseFloat(document.getElementById('j1').value),
+                parseFloat(document.getElementById('j2').value),
+                parseFloat(document.getElementById('j3').value),
+                parseFloat(document.getElementById('j4').value),
+                parseFloat(document.getElementById('j5').value),
+                parseFloat(document.getElementById('j6').value)
+            ];
+            fetch('/api/move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ joints })
+            }).then(r => r.json()).then(d => console.log(d));
+        }
+    </script>
+</body>
+</html>
