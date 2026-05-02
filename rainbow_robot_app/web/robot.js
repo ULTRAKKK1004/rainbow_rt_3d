@@ -110,10 +110,10 @@ function loadRobot() {
 
     // Joint 5: wrist2 (link4 -> link5)
     const j5 = new THREE.Group();
-    // URDF: 0 -0.1107 0.1107 -> Three.js Y-up: x=0, y=0.1107, z=-0.1107? 
-    // Let's use the URDF values carefully. 
-    // Standard URDF (Z-up) to Three.js (Y-up): X -> X, Y -> Z, Z -> Y
-    j5.position.set(0, 0.1107, -0.1107);
+    // URDF xyz="0 -0.1107 0.1107"
+    // Mapping (URDF -> Three.js): X->X, Y->-Z, Z->Y
+    // xyz -> (0, 0.1107, 0.1107)
+    j5.position.set(0, 0.1107, 0.1107);
     link4.add(j5);
     robotJoints.push(j5);
 
@@ -145,32 +145,33 @@ function updateStatus() {
         .then(data => {
             jointData = data.joints;
             // Update UI
-            for (let i = 0; i < 6; i++) {
-                const deg = (jointData[i] * 180 / Math.PI).toFixed(2);
-                document.getElementById(`cur_j1`).innerText = (jointData[0] * 180 / Math.PI).toFixed(1);
-                document.getElementById(`cur_j2`).innerText = (jointData[1] * 180 / Math.PI).toFixed(1);
-                document.getElementById(`cur_j3`).innerText = (jointData[2] * 180 / Math.PI).toFixed(1);
-                document.getElementById(`cur_j4`).innerText = (jointData[3] * 180 / Math.PI).toFixed(1);
-                document.getElementById(`cur_j5`).innerText = (jointData[4] * 180 / Math.PI).toFixed(1);
-                document.getElementById(`cur_j6`).innerText = (jointData[5] * 180 / Math.PI).toFixed(1);
-            }
+            document.getElementById(`cur_j1`).innerText = (jointData[0] * 180 / Math.PI).toFixed(1);
+            document.getElementById(`cur_j2`).innerText = (jointData[1] * 180 / Math.PI).toFixed(1);
+            document.getElementById(`cur_j3`).innerText = (jointData[2] * 180 / Math.PI).toFixed(1);
+            document.getElementById(`cur_j4`).innerText = (jointData[3] * 180 / Math.PI).toFixed(1);
+            document.getElementById(`cur_j5`).innerText = (jointData[4] * 180 / Math.PI).toFixed(1);
+            document.getElementById(`cur_j6`).innerText = (jointData[5] * 180 / Math.PI).toFixed(1);
             
             // Update Robot Rotations
             if (robotJoints.length === 6) {
-                // URDF (Z-up) to Three.js (Y-up) mapping:
-                // URDF Z-axis (Base, Wrist2) -> Three.js Y-axis
-                // URDF Y-axis (Shoulder, Elbow, Wrist1, Wrist3) -> Three.js Z-axis
+                // URDF Axis mapping to Three.js
+                // base: Z (0,0,1) -> Three Y
+                // shoulder: Y (0,1,0) -> Three -Z
+                // elbow: Y (0,1,0) -> Three -Z
+                // wrist1: Y (0,1,0) -> Three -Z
+                // wrist2: Z (0,0,1) -> Three Y
+                // wrist3: Y (0,1,0) -> Three -Z
                 
-                robotJoints[0].rotation.y = jointData[0]; // base
-                robotJoints[1].rotation.z = jointData[1]; // shoulder
-                robotJoints[2].rotation.z = jointData[2]; // elbow
-                robotJoints[3].rotation.z = jointData[3]; // wrist1
-                robotJoints[4].rotation.y = jointData[4]; // wrist2
-                robotJoints[5].rotation.z = jointData[5]; // wrist3
+                robotJoints[0].rotation.y = jointData[0];
+                robotJoints[1].rotation.z = -jointData[1];
+                robotJoints[2].rotation.z = -jointData[2];
+                robotJoints[3].rotation.z = -jointData[3];
+                robotJoints[4].rotation.y = jointData[4];
+                robotJoints[5].rotation.z = -jointData[5];
             }
-
         });
 }
+
 
 function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
