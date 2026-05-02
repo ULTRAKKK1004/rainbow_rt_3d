@@ -11,6 +11,8 @@ let isDancing = false;
 let danceStep = 0;
 let envModel = null;
 let tcpMarker = null;
+let lastModelData = null; // Store model data for saving
+let lastModelExt = null;
 
 function getJointLimits() {
     const limits = [];
@@ -110,6 +112,8 @@ function init() {
 
 function loadUserFile(contents, extension) {
     if (envModel) scene.remove(envModel);
+    lastModelData = contents;
+    lastModelExt = extension;
     
     if (extension === 'obj') {
         const loader = new OBJLoader();
@@ -347,4 +351,15 @@ function onWindowResize() {
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
+}
+
+window.getWorkspaceData = function() {
+    return {
+        modelData: lastModelData,
+        modelExt: lastModelExt
+    };
+}
+
+window.triggerModelLoad = function(data, ext) {
+    loadUserFile(data, ext);
 }

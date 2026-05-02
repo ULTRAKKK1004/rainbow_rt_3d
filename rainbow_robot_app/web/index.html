@@ -8,13 +8,21 @@
         body { margin: 0; font-family: sans-serif; overflow: hidden; }
         #ui {
             position: absolute; top: 20px; left: 20px;
-            background: rgba(255,255,255,0.8); padding: 20px;
+            background: rgba(255,255,255,0.9); padding: 20px;
             border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: 300px;
+            width: 450px;
+            max-height: 90vh; overflow-y: auto;
         }
-        .joint-row { margin-bottom: 10px; }
-        label { display: inline-block; width: 80px; }
-        input[type="number"] { width: 60px; }
+        .joint-row { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 8px; 
+            font-size: 0.9em;
+        }
+        .joint-row label { width: 30px; font-weight: bold; }
+        .joint-row span { width: 40px; margin-right: 10px; color: #007bff; text-align: right; }
+        .joint-row input { margin: 0 5px; }
+        .label-small { font-size: 0.8em; color: #666; margin-left: 10px; }
         button {
             margin-top: 10px; width: 100%; padding: 10px;
             background: #007bff; color: white; border: none;
@@ -91,7 +99,8 @@
                 RX: <input type="number" id="envRX" value="0" step="10" style="width: 40px;">
                 RY: <input type="number" id="envRY" value="0" step="10" style="width: 40px;">
                 RZ: <input type="number" id="envRZ" value="0" step="10" style="width: 40px;"><br>
-                Scale: <input type="number" id="envScale" value="1.0" step="0.1" style="width: 60px;">
+                Scale: <input type="number" id="envScale" value="1.0" step="0.1" style="width: 60px;"><br>
+                <input type="checkbox" id="attachToTCP" onchange="updateEnvModel()"> Attach to TCP (End-Effector)
             </div>
             <button onclick="updateEnvModel()" style="background: #6c757d; font-size: 0.8em; padding: 5px;">Update Position</button>
         </div>
@@ -106,7 +115,6 @@
     </div>
 
     <script type="importmap">
-
         {
             "imports": {
                 "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
@@ -141,6 +149,7 @@
         }
 
         window.saveWorkspace = function() {
+            const wsData = window.getWorkspaceData ? window.getWorkspaceData() : {};
             const config = {
                 jointLimits: [],
                 env: {
@@ -150,8 +159,11 @@
                     rx: document.getElementById('envRX').value,
                     ry: document.getElementById('envRY').value,
                     rz: document.getElementById('envRZ').value,
-                    scale: document.getElementById('envScale').value
-                }
+                    scale: document.getElementById('envScale').value,
+                    attached: document.getElementById('attachToTCP').checked
+                },
+                modelData: wsData.modelData,
+                modelExt: wsData.modelExt
             };
             for (let i = 1; i <= 6; i++) {
                 config.jointLimits.push({
@@ -163,7 +175,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'robot_workspace_config.json';
+            a.download = 'robot_workspace_full_config.json';
             a.click();
         }
 
@@ -173,6 +185,12 @@
             const reader = new FileReader();
             reader.onload = (event) => {
                 const config = JSON.parse(event.target.result);
+                
+                // Load Model Data first if exists
+                if (config.modelData && config.modelExt && window.triggerModelLoad) {
+                    window.triggerModelLoad(config.modelData, config.modelExt);
+                }
+
                 // Apply Env
                 if (config.env) {
                     document.getElementById('envX').value = config.env.x;
@@ -183,7 +201,7 @@
                     document.getElementById('envRZ').value = config.env.rz;
                     document.getElementById('envScale').value = config.env.scale;
                     document.getElementById('attachToTCP').checked = config.env.attached || false;
-                    window.updateEnvModel();
+                    setTimeout(() => window.updateEnvModel(), 200); // Wait for model processing
                 }
                 // Apply Limits
                 if (config.jointLimits) {
@@ -192,7 +210,7 @@
                         document.getElementById(`j${i+1}_max`).value = lim.max;
                     });
                 }
-                alert('Configuration loaded successfully!');
+                alert('Full Configuration loaded successfully!');
             };
             reader.readAsText(file);
         });
