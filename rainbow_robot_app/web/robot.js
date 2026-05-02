@@ -2,12 +2,15 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { ColladaLoader } from 'three/addons/loaders/ColladaLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { STLLoader } from 'three/addons/loaders/STLLoader.js';
 
 let scene, camera, renderer, controls;
 let robotJoints = [];
 let jointData = [0, 0, 0, 0, 0, 0];
 let isDancing = false;
 let danceStep = 0;
+let envModel = null;
+
 const jointLimits = [
     { min: -3.14, max: 3.14 },
     { min: -3.14, max: 3.14 },
@@ -54,14 +57,13 @@ function init() {
     scene.add(grid);
 
     loadRobot();
-    loadEnvironment();
 
     window.addEventListener('resize', onWindowResize);
     
     // Status polling
     setInterval(updateStatus, 50);
 
-    // Export Dance function to window
+    // Export functions to window
     window.robotDance = function() {
         isDancing = !isDancing;
         const btn = document.getElementById('danceBtn');
@@ -74,19 +76,61 @@ function init() {
             btn.style.background = "#28a745";
         }
     };
+
+    window.refreshEnvModel = function() {
+        handleEnvUpdate();
+    };
+
+    // Handle file input
+    document.getElementById('modelInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const contents = event.target.result;
+            const extension = file.name.split('.').pop().toLowerCase();
+            loadUserFile(contents, extension);
+        };
+        if (file.name.endsWith('.obj')) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsArrayBuffer(file);
+        }
+    });
 }
 
-function loadEnvironment() {
-    // Add a simple table as a constraint example
-    const tableGeo = new THREE.BoxGeometry(1, 0.05, 1);
-    const tableMat = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
-    const table = new THREE.Mesh(tableGeo, tableMat);
-    table.position.set(0.5, 0.4, 0); // Position where robot might hit
-    scene.add(table);
+function loadUserFile(contents, extension) {
+    if (envModel) scene.remove(envModel);
+    
+    if (extension === 'obj') {
+        const loader = new OBJLoader();
+        envModel = loader.parse(contents);
+        setupEnvModel(envModel);
+    } else if (extension === 'stl') {
+        const loader = new STLLoader();
+        const geometry = loader.parse(contents);
+        const material = new THREE.MeshPhongMaterial({ color: 0xAAAAAA });
+        envModel = new THREE.Mesh(geometry, material);
+        setupEnvModel(envModel);
+    }
+}
 
-    // Placeholder for loading OBJ/STP
-    // const objLoader = new OBJLoader();
-    // objLoader.load('models/my_object.obj', (obj) => { scene.add(obj); });
+function setupEnvModel(model) {
+    scene.add(model);
+    handleEnvUpdate();
+}
+
+function handleEnvUpdate() {
+    if (!envModel) return;
+    const x = parseFloat(document.getElementById('envX').value);
+    const y = parseFloat(document.getElementById('envY').value);
+    const z = parseFloat(document.getElementById('envZ').value);
+    const rx = parseFloat(document.getElementById('envRX').value) * Math.PI / 180;
+    const ry = parseFloat(document.getElementById('envRY').value) * Math.PI / 180;
+    const rz = parseFloat(document.getElementById('envRZ').value) * Math.PI / 180;
+
+    envModel.position.set(x, y, z);
+    envModel.rotation.set(rx, ry, rz);
 }
 
 function startDanceLoop() {
