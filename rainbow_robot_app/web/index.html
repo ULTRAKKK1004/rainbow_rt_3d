@@ -182,6 +182,7 @@
                     document.getElementById('envRY').value = config.env.ry;
                     document.getElementById('envRZ').value = config.env.rz;
                     document.getElementById('envScale').value = config.env.scale;
+                    document.getElementById('attachToTCP').checked = config.env.attached || false;
                     window.updateEnvModel();
                 }
                 // Apply Limits

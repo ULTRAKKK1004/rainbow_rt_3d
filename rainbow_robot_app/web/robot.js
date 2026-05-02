@@ -138,6 +138,20 @@ function handleEnvUpdate() {
     const ry = parseFloat(document.getElementById('envRY').value) * Math.PI / 180;
     const rz = parseFloat(document.getElementById('envRZ').value) * Math.PI / 180;
     const s = parseFloat(document.getElementById('envScale').value);
+    const attached = document.getElementById('attachToTCP').checked;
+
+    if (attached) {
+        // Attach to Link 6 (Last Joint)
+        const lastLink = robotJoints[5].children[0];
+        if (lastLink && envModel.parent !== lastLink) {
+            lastLink.add(envModel);
+        }
+    } else {
+        // Detach and return to global scene
+        if (envModel.parent !== scene) {
+            scene.add(envModel);
+        }
+    }
 
     envModel.position.set(x, y, z);
     envModel.rotation.set(rx, ry, rz);
