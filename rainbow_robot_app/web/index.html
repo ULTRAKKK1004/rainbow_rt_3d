@@ -95,6 +95,14 @@
             </div>
             <button onclick="updateEnvModel()" style="background: #6c757d; font-size: 0.8em; padding: 5px;">Update Position</button>
         </div>
+        <div id="config-controls" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
+            <strong>Workspace Configuration</strong><br>
+            <div style="display: flex; gap: 5px; margin-top: 5px;">
+                <button onclick="saveWorkspace()" style="background: #17a2b8; font-size: 0.8em; padding: 5px;">Save Config</button>
+                <button onclick="document.getElementById('configInput').click()" style="background: #6f42c1; font-size: 0.8em; padding: 5px;">Load Config</button>
+            </div>
+            <input type="file" id="configInput" accept=".json" style="display: none;">
+        </div>
     </div>
 
     <script type="importmap">
@@ -131,6 +139,62 @@
         window.updateEnvModel = function() {
             if (window.refreshEnvModel) window.refreshEnvModel();
         }
+
+        window.saveWorkspace = function() {
+            const config = {
+                jointLimits: [],
+                env: {
+                    x: document.getElementById('envX').value,
+                    y: document.getElementById('envY').value,
+                    z: document.getElementById('envZ').value,
+                    rx: document.getElementById('envRX').value,
+                    ry: document.getElementById('envRY').value,
+                    rz: document.getElementById('envRZ').value,
+                    scale: document.getElementById('envScale').value
+                }
+            };
+            for (let i = 1; i <= 6; i++) {
+                config.jointLimits.push({
+                    min: document.getElementById(`j${i}_min`).value,
+                    max: document.getElementById(`j${i}_max`).value
+                });
+            }
+            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'robot_workspace_config.json';
+            a.click();
+        }
+
+        document.getElementById('configInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const config = JSON.parse(event.target.result);
+                // Apply Env
+                if (config.env) {
+                    document.getElementById('envX').value = config.env.x;
+                    document.getElementById('envY').value = config.env.y;
+                    document.getElementById('envZ').value = config.env.z;
+                    document.getElementById('envRX').value = config.env.rx;
+                    document.getElementById('envRY').value = config.env.ry;
+                    document.getElementById('envRZ').value = config.env.rz;
+                    document.getElementById('envScale').value = config.env.scale;
+                    window.updateEnvModel();
+                }
+                // Apply Limits
+                if (config.jointLimits) {
+                    config.jointLimits.forEach((lim, i) => {
+                        document.getElementById(`j${i+1}_min`).value = lim.min;
+                        document.getElementById(`j${i+1}_max`).value = lim.max;
+                    });
+                }
+                alert('Configuration loaded successfully!');
+            };
+            reader.readAsText(file);
+        });
     </script>
 </body>
 </html>
