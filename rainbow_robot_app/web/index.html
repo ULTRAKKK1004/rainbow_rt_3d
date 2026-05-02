@@ -28,19 +28,45 @@
     <div id="ui">
         <h3>Robot Control</h3>
         <div id="controls">
-            <div class="joint-row"><label>Joint 1:</label> <input type="number" id="j1" value="0" step="10"> deg</div>
-            <div class="joint-row"><label>Joint 2:</label> <input type="number" id="j2" value="0" step="10"> deg</div>
-            <div class="joint-row"><label>Joint 3:</label> <input type="number" id="j3" value="0" step="10"> deg</div>
-            <div class="joint-row"><label>Joint 4:</label> <input type="number" id="j4" value="0" step="10"> deg</div>
-            <div class="joint-row"><label>Joint 5:</label> <input type="number" id="j5" value="0" step="10"> deg</div>
-            <div class="joint-row"><label>Joint 6:</label> <input type="number" id="j6" value="0" step="10"> deg</div>
+            <div class="joint-row">
+                <label>J1:</label> <input type="number" id="j1" value="0" step="10" style="width: 45px;">
+                Min: <input type="number" id="j1_min" value="-180" style="width: 45px;">
+                Max: <input type="number" id="j1_max" value="180" style="width: 45px;">
+            </div>
+            <div class="joint-row">
+                <label>J2:</label> <input type="number" id="j2" value="0" step="10" style="width: 45px;">
+                Min: <input type="number" id="j2_min" value="-180" style="width: 45px;">
+                Max: <input type="number" id="j2_max" value="180" style="width: 45px;">
+            </div>
+            <div class="joint-row">
+                <label>J3:</label> <input type="number" id="j3" value="0" step="10" style="width: 45px;">
+                Min: <input type="number" id="j3_min" value="-180" style="width: 45px;">
+                Max: <input type="number" id="j3_max" value="180" style="width: 45px;">
+            </div>
+            <div class="joint-row">
+                <label>J4:</label> <input type="number" id="j4" value="0" step="10" style="width: 45px;">
+                Min: <input type="number" id="j4_min" value="-180" style="width: 45px;">
+                Max: <input type="number" id="j4_max" value="180" style="width: 45px;">
+            </div>
+            <div class="joint-row">
+                <label>J5:</label> <input type="number" id="j5" value="0" step="10" style="width: 45px;">
+                Min: <input type="number" id="j5_min" value="-180" style="width: 45px;">
+                Max: <input type="number" id="j5_max" value="180" style="width: 45px;">
+            </div>
+            <div class="joint-row">
+                <label>J6:</label> <input type="number" id="j6" value="0" step="10" style="width: 45px;">
+                Min: <input type="number" id="j6_min" value="-180" style="width: 45px;">
+                Max: <input type="number" id="j6_max" value="180" style="width: 45px;">
+            </div>
             <button onclick="sendMove()">Send Move Command</button>
         </div>
         <div id="status">
-            <strong>Current Status:</strong><br>
-            J1: <span id="cur_j1">0</span>, J2: <span id="cur_j2">0</span><br>
-            J3: <span id="cur_j3">0</span>, J4: <span id="cur_j4">0</span><br>
-            J5: <span id="cur_j5">0</span>, J6: <span id="cur_j6">0</span>
+            <strong>Current Joint Angles (deg):</strong><br>
+            J1: <span id="cur_j1">0</span>, J2: <span id="cur_j2">0</span>, J3: <span id="cur_j3">0</span><br>
+            J4: <span id="cur_j4">0</span>, J5: <span id="cur_j5">0</span>, J6: <span id="cur_j6">0</span>
+            <hr>
+            <strong>TCP Position (Cartesian):</strong><br>
+            X: <span id="tcp_x">0</span>, Y: <span id="tcp_y">0</span>, Z: <span id="tcp_z">0</span>
         </div>
         <div id="extra-controls" style="margin-top: 15px; border-top: 1px solid #ccc; padding-top: 10px;">
             <button onclick="toggleDance()" id="danceBtn" style="background: #28a745;">Start Dance Mode</button>

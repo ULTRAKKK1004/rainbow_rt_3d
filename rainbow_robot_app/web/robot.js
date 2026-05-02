@@ -10,15 +10,18 @@ let jointData = [0, 0, 0, 0, 0, 0];
 let isDancing = false;
 let danceStep = 0;
 let envModel = null;
+let tcpMarker = null;
 
-const jointLimits = [
-    { min: -3.14, max: 3.14 },
-    { min: -3.14, max: 3.14 },
-    { min: -3.14, max: 3.14 },
-    { min: -3.14, max: 3.14 },
-    { min: -3.14, max: 3.14 },
-    { min: -3.14, max: 3.14 }
-];
+function getJointLimits() {
+    const limits = [];
+    for (let i = 1; i <= 6; i++) {
+        limits.push({
+            min: parseFloat(document.getElementById(`j${i}_min`).value) * Math.PI / 180,
+            max: parseFloat(document.getElementById(`j${i}_max`).value) * Math.PI / 180
+        });
+    }
+    return limits;
+}
 
 const danceMoves = [
     [0, 45, -90, 0, 45, 0],
@@ -55,6 +58,12 @@ function init() {
 
     const grid = new THREE.GridHelper(10, 10);
     scene.add(grid);
+
+    // Marker for TCP
+    const tcpGeo = new THREE.SphereGeometry(0.02);
+    const tcpMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    tcpMarker = new THREE.Mesh(tcpGeo, tcpMat);
+    scene.add(tcpMarker);
 
     loadRobot();
 
@@ -136,21 +145,31 @@ function handleEnvUpdate() {
 function startDanceLoop() {
     if (!isDancing) return;
 
-    const move = danceMoves[danceStep];
+    let move = danceMoves[danceStep];
+    const limits = getJointLimits();
+    
+    // Apply constraints to dance move
+    const constrainedMove = move.map((val, i) => {
+        const rad = val * Math.PI / 180;
+        const clamped = Math.max(limits[i].min, Math.min(limits[i].max, rad));
+        return clamped * 180 / Math.PI;
+    });
+
     fetch('/api/move', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ joints: move })
+        body: JSON.stringify({ joints: constrainedMove })
     }).then(() => {
         danceStep = (danceStep + 1) % danceMoves.length;
-        setTimeout(startDanceLoop, 2000); // 2 seconds per move
+        setTimeout(startDanceLoop, 2000);
     });
 }
 
 function checkLimits(joints) {
     let limitReached = false;
+    const limits = getJointLimits();
     for (let i = 0; i < 6; i++) {
-        if (joints[i] < jointLimits[i].min || joints[i] > jointLimits[i].max) {
+        if (joints[i] < limits[i].min - 0.01 || joints[i] > limits[i].max + 0.01) {
             limitReached = true;
             break;
         }
@@ -232,9 +251,6 @@ function loadRobot() {
 
     // Joint 5: wrist2 (link4 -> link5)
     const j5 = new THREE.Group();
-    // URDF xyz="0 -0.1107 0.1107"
-    // Mapping (URDF -> Three.js): X->X, Y->-Z, Z->Y
-    // xyz -> (0, 0.1107, 0.1107)
     j5.position.set(0, 0.1107, 0.1107);
     link4.add(j5);
     robotJoints.push(j5);
@@ -278,20 +294,29 @@ function updateStatus() {
 
             // Update Robot Rotations
             if (robotJoints.length === 6) {
-                // URDF Axis mapping to Three.js
-                // base: Z (0,0,1) -> Three Y
-                // shoulder: Y (0,1,0) -> Three -Z
-                // elbow: Y (0,1,0) -> Three -Z
-                // wrist1: Y (0,1,0) -> Three -Z
-                // wrist2: Z (0,0,1) -> Three Y
-                // wrist3: Y (0,1,0) -> Three -Z
-                
                 robotJoints[0].rotation.y = jointData[0];
                 robotJoints[1].rotation.z = -jointData[1];
                 robotJoints[2].rotation.z = -jointData[2];
                 robotJoints[3].rotation.z = -jointData[3];
                 robotJoints[4].rotation.y = jointData[4];
                 robotJoints[5].rotation.z = -jointData[5];
+
+                // Calculate TCP position (Forward Kinematics via Three.js world matrix)
+                // Link 6 is the last group in our hierarchy
+                const lastLink = robotJoints[5].children[0]; // The group containing link6 mesh
+                if (lastLink) {
+                    const worldPos = new THREE.Vector3();
+                    lastLink.getWorldPosition(worldPos);
+                    
+                    // Display coordinates (standard ROS-like: X forward, Y left, Z up)
+                    // Three.js Y-up mapping: X->X, Y->Z, Z->Y
+                    document.getElementById('tcp_x').innerText = worldPos.x.toFixed(3);
+                    document.getElementById('tcp_y').innerText = worldPos.z.toFixed(3);
+                    document.getElementById('tcp_z').innerText = worldPos.y.toFixed(3);
+                    
+                    // Update Red Marker
+                    tcpMarker.position.copy(worldPos);
+                }
             }
         });
 }
